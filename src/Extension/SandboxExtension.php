@@ -70,7 +70,7 @@ final class SandboxExtension extends AbstractExtension
         return $this->policy;
     }
 
-    public function checkSecurity($tags, $filters, $functions)
+    public function checkSecurity($tags, $filters, $functions, Source $source = null)
     {
         if ($this->isSandboxed()) {
             $this->policy->checkSecurity($tags, $filters, $functions);
