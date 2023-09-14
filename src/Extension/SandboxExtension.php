@@ -15,6 +15,8 @@ use Twig\NodeVisitor\SandboxNodeVisitor;
 use Twig\Sandbox\SecurityNotAllowedMethodError;
 use Twig\Sandbox\SecurityNotAllowedPropertyError;
 use Twig\Sandbox\SecurityPolicyInterface;
+use Twig\Sandbox\SourcePolicyInterface;
+use Twig\Sandbox\SourcePolicyUniversal;
 use Twig\Source;
 use Twig\TokenParser\SandboxTokenParser;
 
@@ -22,11 +24,11 @@ final class SandboxExtension extends AbstractExtension
 {
     private $sandboxedGlobally;
     private $sandboxed;
-    private $policy;
+    private $sourcePolicy;
 
-    public function __construct(SecurityPolicyInterface $policy, $sandboxed = false)
+    public function __construct($policy, $sandboxed = false)
     {
-        $this->policy = $policy;
+        $this->setSecurityPolicy($policy);
         $this->sandboxedGlobally = $sandboxed;
     }
 
@@ -60,20 +62,32 @@ final class SandboxExtension extends AbstractExtension
         return $this->sandboxedGlobally;
     }
 
-    public function setSecurityPolicy(SecurityPolicyInterface $policy)
+    public function setSecurityPolicy($policy)
     {
-        $this->policy = $policy;
+        if ($policy instanceof SecurityPolicyInterface) {
+            $this->sourcePolicy = new SourcePolicyUniversal($policy);
+        }
+        elseif ($policy instanceof SourcePolicyInterface) {
+            $this->sourcePolicy = $policy;
+        }
+        else {
+            throw new \InvalidArgumentException(sprintf('First argument of "%s" must be an instance of "%s" or "%s", "%s" given.', __METHOD__, SecurityPolicyInterface::class, SourcePolicyInterface::class, \get_class($policy)));
+        }
     }
 
     public function getSecurityPolicy()
     {
-        return $this->policy;
+        if ($this->sourcePolicy instanceof SourcePolicyUniversal) {
+            return $this->sourcePolicy->getPolicy(null);
+        }
+        throw new \LogicException('Security policy varies by source.');
+        // return $this->sourcePolicy;
     }
 
     public function checkSecurity($tags, $filters, $functions, Source $source = null)
     {
         if ($this->isSandboxed()) {
-            $this->policy->checkSecurity($tags, $filters, $functions);
+            $this->sourcePolicy->getPolicy($source)->checkSecurity($tags, $filters, $functions);
         }
     }
 
@@ -81,7 +95,7 @@ final class SandboxExtension extends AbstractExtension
     {
         if ($this->isSandboxed()) {
             try {
-                $this->policy->checkMethodAllowed($obj, $method);
+                $this->sourcePolicy->getPolicy($source)->checkMethodAllowed($obj, $method);
             } catch (SecurityNotAllowedMethodError $e) {
                 $e->setSourceContext($source);
                 $e->setTemplateLine($lineno);
@@ -95,7 +109,7 @@ final class SandboxExtension extends AbstractExtension
     {
         if ($this->isSandboxed()) {
             try {
-                $this->policy->checkPropertyAllowed($obj, $property);
+                $this->sourcePolicy->getPolicy($source)->checkPropertyAllowed($obj, $property);
             } catch (SecurityNotAllowedPropertyError $e) {
                 $e->setSourceContext($source);
                 $e->setTemplateLine($lineno);
@@ -109,7 +123,7 @@ final class SandboxExtension extends AbstractExtension
     {
         if ($this->isSandboxed() && \is_object($obj) && method_exists($obj, '__toString')) {
             try {
-                $this->policy->checkMethodAllowed($obj, '__toString');
+                $this->sourcePolicy->getPolicy($source)->checkMethodAllowed($obj, '__toString');
             } catch (SecurityNotAllowedMethodError $e) {
                 $e->setSourceContext($source);
                 $e->setTemplateLine($lineno);
