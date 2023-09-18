@@ -25,7 +25,7 @@ interface SecurityPolicyInterface
      *
      * @throws SecurityError
      */
-    public function checkSecurity($tags, $filters, $functions);
+    public function checkSecurity($tags, $filters, $functions, $source = null);
 
     /**
      * @param object $obj
@@ -33,7 +33,7 @@ interface SecurityPolicyInterface
      *
      * @throws SecurityNotAllowedMethodError
      */
-    public function checkMethodAllowed($obj, $method);
+    public function checkMethodAllowed($obj, $method, $source = null);
 
     /**
      * @param object $obj
@@ -41,7 +41,7 @@ interface SecurityPolicyInterface
      *
      * @throws SecurityNotAllowedPropertyError
      */
-    public function checkPropertyAllowed($obj, $property);
+    public function checkPropertyAllowed($obj, $propert, $source = null);
 }
 
 class_alias('Twig\Sandbox\SecurityPolicyInterface', 'Twig_Sandbox_SecurityPolicyInterface');

@@ -64,7 +64,7 @@ final class SecurityPolicy implements SecurityPolicyInterface
         $this->allowedFunctions = $functions;
     }
 
-    public function checkSecurity($tags, $filters, $functions)
+    public function checkSecurity($tags, $filters, $functions, $source = null)
     {
         foreach ($tags as $tag) {
             if (!\in_array($tag, $this->allowedTags)) {
@@ -85,7 +85,7 @@ final class SecurityPolicy implements SecurityPolicyInterface
         }
     }
 
-    public function checkMethodAllowed($obj, $method)
+    public function checkMethodAllowed($obj, $method, $source = null)
     {
         if ($obj instanceof Template || $obj instanceof Markup) {
             return;
@@ -106,7 +106,7 @@ final class SecurityPolicy implements SecurityPolicyInterface
         }
     }
 
-    public function checkPropertyAllowed($obj, $property)
+    public function checkPropertyAllowed($obj, $property, $source = null)
     {
         $allowed = false;
         foreach ($this->allowedProperties as $class => $properties) {

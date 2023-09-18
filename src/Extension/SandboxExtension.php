@@ -73,7 +73,7 @@ final class SandboxExtension extends AbstractExtension
     public function checkSecurity($tags, $filters, $functions, Source $source = null)
     {
         if ($this->isSandboxed()) {
-            $this->policy->checkSecurity($tags, $filters, $functions);
+            $this->policy->checkSecurity($tags, $filters, $functions, $source);
         }
     }
 
@@ -81,7 +81,7 @@ final class SandboxExtension extends AbstractExtension
     {
         if ($this->isSandboxed()) {
             try {
-                $this->policy->checkMethodAllowed($obj, $method);
+                $this->policy->checkMethodAllowed($obj, $method, $source);
             } catch (SecurityNotAllowedMethodError $e) {
                 $e->setSourceContext($source);
                 $e->setTemplateLine($lineno);
@@ -95,7 +95,7 @@ final class SandboxExtension extends AbstractExtension
     {
         if ($this->isSandboxed()) {
             try {
-                $this->policy->checkPropertyAllowed($obj, $property);
+                $this->policy->checkPropertyAllowed($obj, $property, $source);
             } catch (SecurityNotAllowedPropertyError $e) {
                 $e->setSourceContext($source);
                 $e->setTemplateLine($lineno);
@@ -109,7 +109,7 @@ final class SandboxExtension extends AbstractExtension
     {
         if ($this->isSandboxed() && \is_object($obj) && method_exists($obj, '__toString')) {
             try {
-                $this->policy->checkMethodAllowed($obj, '__toString');
+                $this->policy->checkMethodAllowed($obj, '__toString', $source);
             } catch (SecurityNotAllowedMethodError $e) {
                 $e->setSourceContext($source);
                 $e->setTemplateLine($lineno);
