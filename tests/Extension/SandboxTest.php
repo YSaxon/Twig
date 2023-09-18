@@ -410,14 +410,46 @@ EOF
         $this->assertSame('foo, bar', $twig->load('index')->render([]));
     }
 
-    protected function getEnvironment($sandboxed, $options, $templates, $tags = [], $filters = [], $methods = [], $properties = [], $functions = [])
+    protected function getEnvironment($sandboxed, $options, $templates, $tags = [], $filters = [], $methods = [], $properties = [], $functions = [], $sourcePolicy = null)
     {
         $loader = new ArrayLoader($templates);
         $twig = new Environment($loader, array_merge(['debug' => true, 'cache' => false, 'autoescape' => false], $options));
         $policy = new SecurityPolicy($tags, $filters, $methods, $properties, $functions);
-        $twig->addExtension(new SandboxExtension($policy, $sandboxed));
+        $twig->addExtension(new SandboxExtension($policy, $sandboxed, $sourcePolicy));
 
         return $twig;
+    }
+
+    public function testSandboxSourcePolicyEnableReturningFalse()
+    {
+        $twig = $this->getEnvironment(false, [], self::$templates, [], [], [], [], [], new class() implements \Twig\Sandbox\SourcePolicyInterface {
+            public function enableSandbox($source): bool
+            {
+                return $source->getName() != '1_basic';
+            }});
+        $this->assertEquals('FOO', $twig->load('1_basic')->render(self::$params));
+    }
+
+    public function testSandboxSourcePolicyEnableReturningTrue()
+    {
+        $twig = $this->getEnvironment(false, [], self::$templates, [], [], [], [], [], new class() implements \Twig\Sandbox\SourcePolicyInterface {
+            public function enableSandbox($source): bool
+            {
+                return $source->getName() === '1_basic';
+            }});
+        $this->expectException(SecurityError::class);
+        $twig->load('1_basic')->render([]);
+    }
+
+    public function testSandboxSourcePolicyFalseDoesntOverrideOtherEnables()
+    {
+        $twig = $this->getEnvironment(true, [], self::$templates, [], [], [], [], [], new class() implements \Twig\Sandbox\SourcePolicyInterface {
+            public function enableSandbox($source): bool
+            {
+                return false;
+            }});
+            $this->expectException(SecurityError::class);
+            $twig->load('1_basic')->render([]);
     }
 }
 
