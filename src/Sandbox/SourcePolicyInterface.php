@@ -24,5 +24,5 @@ interface SourcePolicyInterface
      * @param Source $source
      *
      */
-    public function enableSandbox(Source $source) : bool;
+    public function enableSandbox(Source $source = null) : bool;
 }
