@@ -1414,6 +1414,15 @@ function twig_get_attribute(Environment $env, Source $source, $object, $item, ar
                 return true;
             }
 
+            if ($object instanceof ArrayAccess && $sandboxed) {
+                    try
+                    {
+                        $env->getExtension(SandboxExtension::class)->checkMethodAllowed($object, 'offsetGet', $lineno, $source); //allow whitelisting either the offsetGet method
+                    } catch (\Twig\Sandbox\SecurityError $e) {
+                        $env->getExtension(SandboxExtension::class)->checkPropertyAllowed($object, $arrayItem, $lineno, $source); //or the specific properties individually
+                    }
+            }
+
             return $object[$arrayItem];
         }
 
